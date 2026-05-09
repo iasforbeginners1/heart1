@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Heart Anatomy</title>
+    <style>
+        :root { --primary: #e74c3c; --bg: #fdf2f2; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: var(--bg); display: flex; flex-direction: column; align-items: center; margin: 0; padding: 20px; }
+        
+        h1 { color: #c0392b; margin-bottom: 10px; }
+        .instructions { font-size: 14px; color: #666; margin-bottom: 20px; text-align: center; }
+
+        /* Labels Store */
+        #labels-container { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 800px; margin-bottom: 30px; padding: 15px; background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        .draggable { padding: 8px 16px; background: white; border: 2px solid #ddd; border-radius: 6px; cursor: grab; font-weight: 600; font-size: 13px; transition: 0.2s; user-select: none; }
+        .draggable:active { cursor: grabbing; transform: scale(0.95); }
+        .draggable.dragging { opacity: 0.5; }
+
+        /* Game Board */
+        #game-board { position: relative; width: 800px; height: 600px; background-image: url('heart.png'); /* Aapki image ka naam yahan ayega */ background-size: contain; background-repeat: no-repeat; border-radius: 10px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); background-color: white; }
+
+        /* Invisible Drop Zones based on your image layout */
+        .drop-zone { position: absolute; width: 150px; height: 35px; border: 2px dashed rgba(0,0,0,0.1); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: transparent; transition: 0.3s; }
+        .drop-zone:hover { border-color: var(--primary); color: #999; }
+        .drop-zone.correct { border: 2px solid #2ecc71; background: rgba(46, 204, 113, 0.1); color: #27ae60; font-weight: bold; border-style: solid; }
+
+        /* Specific Positions (Coordinates match your image layout) */
+        .zone-1 { top: 185px; left: 80px; }  /* Right brachiocephalic vein */
+        .zone-2 { top: 325px; left: 80px; }  /* Right Atrium */
+        .zone-3 { top: 405px; left: 160px; } /* Left Atrium (Bottom pointer) */
+        .zone-4 { top: 185px; left: 560px; } /* Pulmonary Truck */
+        .zone-5 { top: 275px; left: 560px; } /* Left Atrium (Upper pointer) */
+        .zone-6 { top: 385px; left: 560px; } /* Left Ventricle */
+        .zone-7 { top: 460px; left: 560px; } /* Top of the Heart (Bottom pointer) */
+
+        #status { margin-top: 20px; font-weight: bold; font-size: 18px; height: 25px; }
+        button#reset { margin-top: 20px; padding: 10px 20px; background: var(--primary); color: white; border: none; border-radius: 5px; cursor: pointer; display: none; }
+    </style>
+</head>
+<body>
+
+    <h1>Human Heart Diagram Quiz</h1>
+    <p class="instructions">Upar se naam ko drag karein aur image ke sahi pointer box par drop karein.</p>
+
+    <div id="labels-container">
+        <div class="draggable" draggable="true" id="label-1">The right brachiocephalic vein</div>
+        <div class="draggable" draggable="true" id="label-2">Right Atrium</div>
+        <div class="draggable" draggable="true" id="label-3">Left Atrium</div>
+        <div class="draggable" draggable="true" id="label-4">Pulmonary Truck</div>
+        <div class="draggable" draggable="true" id="label-5">Left Atrium</div>
+        <div class="draggable" draggable="true" id="label-6">Left Ventricle</div>
+        <div class="draggable" draggable="true" id="label-7">Top of the Heart</div>
+    </div>
+
+    <div id="game-board">
+        <!-- Mapping zones to the provided image pointers -->
+        <div class="drop-zone zone-1" data-id="label-1">Drop Here</div>
+        <div class="drop-zone zone-2" data-id="label-2">Drop Here</div>
+        <div class="drop-zone zone-3" data-id="label-3">Drop Here</div>
+        <div class="drop-zone zone-4" data-id="label-4">Drop Here</div>
+        <div class="drop-zone zone-5" data-id="label-5">Drop Here</div>
+        <div class="drop-zone zone-6" data-id="label-6">Drop Here</div>
+        <div class="drop-zone zone-7" data-id="label-7">Drop Here</div>
+    </div>
+
+    <div id="status"></div>
+    <button id="reset" onclick="location.reload()">Firse Khelein</button>
+
+<script>
+    const draggables = document.querySelectorAll('.draggable');
+    const dropZones = document.querySelectorAll('.drop-zone');
+    const status = document.getElementById('status');
+    let correctCount = 0;
+
+    draggables.forEach(draggable => {
+        draggable.addEventListener('dragstart', () => {
+            draggable.classList.add('dragging');
+        });
+
+        draggable.addEventListener('dragend', () => {
+            draggable.classList.remove('dragging');
+        });
+    });
+
+    dropZones.forEach(zone => {
+        zone.addEventListener('dragover', e => {
+            e.preventDefault();
+        });
+
+        zone.addEventListener('drop', e => {
+            e.preventDefault();
+            const draggingId = document.querySelector('.dragging').id;
+            const draggingElement = document.getElementById(draggingId);
+            const targetId = zone.getAttribute('data-id');
+
+            if (draggingId === targetId) {
+                zone.classList.add('correct');
+                zone.innerText = draggingElement.innerText;
+                draggingElement.style.display = 'none';
+                status.innerText = "Sahi Jawab! 🎉";
+                status.style.color = "#27ae60";
+                correctCount++;
+                checkWin();
+            } else {
+                status.innerText = "Galat! Firse koshish karein. ❌";
+                status.style.color = "#e74c3c";
+            }
+        });
+    });
+
+    function checkWin() {
+        if (correctCount === draggables.length) {
+            status.innerText = "Mubarak ho! Aapne pura diagram seekh liya! 🏆";
+            document.getElementById('reset').style.display = 'block';
+        }
+    }
+</script>
+
+</body>
+</html>
